@@ -152,7 +152,3 @@ New accounts default to the `user` role. The status-update endpoint must enforce
 - Keep passwords and password hashes out of public responses and logs.
 - Rotate any secret that has been exposed.
 - Enforce admin authorization on the backend.
-
-## License
-
-Add a license if you choose to publish the project under an open-source license.

@@ -17,8 +17,8 @@ const router = express.Router();
 
 // Idea routes
 router.get("/", getIdeas);
-router.post("/", createIdea);
-router.post("/:id/vote", voteForIdea);
+router.post("/", authMiddleware, createIdea);
+router.post("/:id/vote", authMiddleware, voteForIdea);
 
 // Admin-only status update
 router.patch(
@@ -30,6 +30,6 @@ router.patch(
 
 // Comments routes
 router.get("/:id/comments", getComments);
-router.post("/:id/comments", createComment);
+router.post("/:id/comments", authMiddleware, createComment);
 
 module.exports = router;

@@ -10,6 +10,13 @@ const commentSchema = new mongoose.Schema(
       index: true,
     },
 
+    author: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      index: true,
+    },
+
     authorName: {
       type: String,
       trim: true,

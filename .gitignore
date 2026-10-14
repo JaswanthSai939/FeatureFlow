@@ -27,3 +27,6 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# CodeZero local task metadata
+.code0/

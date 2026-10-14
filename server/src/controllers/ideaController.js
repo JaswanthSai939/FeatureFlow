@@ -2,6 +2,8 @@
 const mongoose = require("mongoose");
 const Idea = require("../model/Idea");
 const Comment = require("../model/Comment");
+const User = require("../model/User");
+const Vote = require("../model/Vote");
 
 // GET /api/ideas
 async function getIdeas(req, res) {
@@ -61,10 +63,18 @@ async function createIdea(req, res) {
   try {
     const { title, description, category } = req.body || {};
 
+    if (!req.user || !mongoose.isValidObjectId(req.user.userId)) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required. Please log in.",
+      });
+    }
+
     const idea = await Idea.create({
       title,
       description,
       category,
+      createdBy: req.user.userId,
     });
 
     return res.status(201).json({
@@ -99,6 +109,35 @@ async function voteForIdea(req, res) {
         success: false,
         message: "Invalid idea ID",
       });
+    }
+
+    if (!req.user || !mongoose.isValidObjectId(req.user.userId)) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required. Please log in.",
+      });
+    }
+
+    const ideaExists = await Idea.exists({ _id: id });
+
+    if (!ideaExists) {
+      return res.status(404).json({
+        success: false,
+        message: "Idea not found",
+      });
+    }
+
+    try {
+      await Vote.create({ user: req.user.userId, idea: id });
+    } catch (error) {
+      if (error.code === 11000) {
+        return res.status(409).json({
+          success: false,
+          message: "You have already voted for this idea",
+        });
+      }
+
+      throw error;
     }
 
     const idea = await Idea.findByIdAndUpdate(
@@ -173,7 +212,14 @@ async function getComments(req, res) {
 async function createComment(req, res) {
   try {
     const { id } = req.params;
-    const { text, authorName } = req.body || {};
+    const { text } = req.body || {};
+
+    if (!req.user || !mongoose.isValidObjectId(req.user.userId)) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required. Please log in.",
+      });
+    }
 
     if (!mongoose.isValidObjectId(id)) {
       return res.status(400).json({
@@ -196,18 +242,10 @@ async function createComment(req, res) {
       });
     }
 
-    if (
-      authorName !== undefined &&
-      (typeof authorName !== "string" ||
-        authorName.trim().length > 50)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Author name must be at most 50 characters",
-      });
-    }
-
-    const idea = await Idea.findById(id);
+    const [idea, author] = await Promise.all([
+      Idea.findById(id),
+      User.findById(req.user.userId).select("name").lean(),
+    ]);
 
     if (!idea) {
       return res.status(404).json({
@@ -216,13 +254,18 @@ async function createComment(req, res) {
       });
     }
 
+    if (!author) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required. Please log in.",
+      });
+    }
+
     const comment = await Comment.create({
       idea: idea._id,
       text: text.trim(),
-      authorName:
-        typeof authorName === "string" && authorName.trim()
-          ? authorName.trim()
-          : "Anonymous",
+      author: author._id,
+      authorName: author.name,
     });
 
     await Idea.updateOne(

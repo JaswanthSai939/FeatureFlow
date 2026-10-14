@@ -1,0 +1,5 @@
+# FeatureFlow — MERN Stack Assignment
+# This project uses Node.js and JavaScript, not Python.
+# Python dependencies are not required.
+# Install backend dependencies using: cd server && npm install
+# Install frontend dependencies using: cd client && npm install
